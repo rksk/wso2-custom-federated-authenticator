@@ -8,38 +8,38 @@ federated authenticators.
 ### Writing a custom federated authenticator
 
 
-1. First create a maven project for the custom federated authenticator. Refer the pom.xml file used for the sample 
-   custom federated authenticator.
-2. Refer the [service component class](https://github.com/pamodaaw/sample-local-authenticator/blob/main/src/main/java/org/wso2/carbon/auth/local/sample/internal/SampleLocalAuthenticatorServiceComponent.java) 
+1. First create a maven project for the custom federated authenticator. Refer the [pom.xml](https://github.com/GANGANI/custom-federated-authenticator/blob/main/pom.xml) 
+   file used for the sample custom federated authenticator.
+2. Refer the [service component class](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/internal/CustomFederatedAuthenticatorServiceComponent.java) 
    as well since the authenticator is written as an OSGI service to deploy in the WSO2 Identity Server and register 
    it as a federated authenticator
-3. The [custom federated authenticator](https://github.com/pamodaaw/sample-local-authenticator/blob/main/src/main/java/org/wso2/carbon/auth/local/sample/SampleLocalAuthenticator.java) 
-   should be written by extending the [AbstractApplicationAuthenticator](https://github.com/wso2/carbon-identity-framework/blob/v5.18.187/components/authentication-framework/org.wso2.carbon.identity.application.authentication.framework/src/main/java/org/wso2/carbon/identity/application/authentication/framework/AbstractApplicationAuthenticator.java) class and implementing the[ FederatedApplicationAuthenticator](https://github.com/wso2/carbon-identity-framework/blob/v5.18.187/components/authentication-framework/org.wso2.carbon.identity.application.authentication.framework/src/main/java/org/wso2/carbon/identity/application/authentication/framework/LocalApplicationAuthenticator.java) class.
+3. The [custom federated authenticator](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/CustomFederatedAuthenticator.java) 
+   should be written by extending the [AbstractApplicationAuthenticator](https://github.com/wso2/carbon-identity-framework/blob/v5.18.187/components/authentication-framework/org.wso2.carbon.identity.application.authentication.framework/src/main/java/org/wso2/carbon/identity/application/authentication/framework/AbstractApplicationAuthenticator.java) class and implementing the [FederatedApplicationAuthenticator](https://github.com/wso2/carbon-identity-framework/blob/master/components/authentication-framework/org.wso2.carbon.identity.application.authentication.framework/src/main/java/org/wso2/carbon/identity/application/authentication/framework/FederatedApplicationAuthenticator.java) class.
 4. You can find a custom federated authenticator from here for your reference
 
 The important methods in the AbstractApplicationAuthenticator class, and the FederatedApplicationAuthenticator interface are listed as follows.
 
-*   **public String getName()**
+*   **[public String getName()](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/CustomFederatedAuthenticator.java#L72-L76)**
 
 Return the name of the authenticator
 
-*   **public String getFriendlyName()**
+*   **[public String getFriendlyName()](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/CustomFederatedAuthenticator.java#L66-L70)**
 
 Returns the display name for the custom federated authenticator. In this sample we are using custom-federated-authenticator
 
-*   **public String getContextIdentifier(HttpServletRequest request)**
+*   **[public String getContextIdentifier(HttpServletRequest request)](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/CustomFederatedAuthenticator.java#L209-L218)**
 
 Returns a unique identifier that will map the authentication request and the response. The value returned by the invocation of authentication request and the response should be the same.
 
-*   **public boolean canHandle(HttpServletRequest request)** -
+*   **[public boolean canHandle(HttpServletRequest request)](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/CustomFederatedAuthenticator.java#L60-L64)** -
 
 Specifies whether this authenticator can handle the authentication response.
 
-*   **protected void initiateAuthenticationRequest(HttpServletRequest request,HttpServletResponse response, AuthenticationContext context)**
+*   **[protected void initiateAuthenticationRequest(HttpServletRequest request,HttpServletResponse response, AuthenticationContext context)](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/CustomFederatedAuthenticator.java#L134-L163)**
 
 Redirects the user to the login page in order to authenticate and in this sample, the user is redirected to the login page of the application which is configured in the partner identity server which acts as the external service.
 
-*   **protected void processAuthenticationResponse(HttpServletRequest request,HttpServletResponse response, AuthenticationContext context)**
+*   **[protected void processAuthenticationResponse(HttpServletRequest request,HttpServletResponse response, AuthenticationContext context)](https://github.com/GANGANI/custom-federated-authenticator/blob/main/src/main/java/org/wso2/carbon/identity/custom/federated/authenticator/CustomFederatedAuthenticator.java#L166)**
 
 Implements the logic of the custom federated authenticator.
 
@@ -108,3 +108,6 @@ Here, the Client Id and Client Secret are the values of external service provide
 2. When it asks for the username password give Alex's username and password who is in the partner identity server.
 
 3. Then the federated authentication can be experienced. 
+
+Similarly, you can write a federated authenticator to authenticate the users using an external system.
+
