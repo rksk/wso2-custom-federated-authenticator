@@ -36,7 +36,6 @@ public class CustomFederatedAuthenticatorConstants {
     public static final String OAUTH2_TOKEN_URL = "OAuth2TokenEPUrl";
 
     public static final String HTTP_ORIGIN_HEADER = "Origin";
-    public static final String MULTI_ATTRIBUTE_SEPARATOR = ",";
     public static final String SUB = "sub";
 
     public static final String OIDC_DIALECT = "http://wso2.org/oidc/claim";

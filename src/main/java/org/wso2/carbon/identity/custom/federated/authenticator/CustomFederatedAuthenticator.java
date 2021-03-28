@@ -18,7 +18,6 @@
 package org.wso2.carbon.identity.custom.federated.authenticator;
 
 import com.nimbusds.jose.util.JSONObjectUtils;
-import net.minidev.json.JSONArray;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -40,14 +39,12 @@ import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.URLBuilderException;
-import org.wso2.carbon.identity.core.util.IdentityCoreConstants;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -120,7 +117,7 @@ public class CustomFederatedAuthenticator extends AbstractApplicationAuthenticat
         authzEpUrl.setRequired(true);
         authzEpUrl.setDescription("Enter OAuth2/OpenID Connect authorization endpoint URL value");
         authzEpUrl.setType("string");
-        authzEpUrl.setDisplayOrder(3);
+        authzEpUrl.setDisplayOrder(4);
         configProperties.add(authzEpUrl);
 
         Property tokenEpUrl = new Property();
@@ -129,7 +126,7 @@ public class CustomFederatedAuthenticator extends AbstractApplicationAuthenticat
         tokenEpUrl.setRequired(true);
         tokenEpUrl.setDescription("Enter OAuth2/OpenID Connect token endpoint URL value");
         tokenEpUrl.setType("string");
-        tokenEpUrl.setDisplayOrder(4);
+        tokenEpUrl.setDisplayOrder(5);
         configProperties.add(tokenEpUrl);
         return configProperties;
     }
@@ -188,14 +185,14 @@ public class CustomFederatedAuthenticator extends AbstractApplicationAuthenticat
             context.setProperty(CustomFederatedAuthenticatorConstants.ACCESS_TOKEN, accessToken);
 
             AuthenticatedUser authenticatedUser;
-            Map<ClaimMapping, String> claims = new HashMap<>();
             Map<String, Object> jsonObject = new HashMap<>();
 
             if (StringUtils.isNotBlank(idToken)) {
                 jsonObject = getIdTokenClaims(context, idToken);
-                String authenticatedUserId = getAuthenticatedUserId(jsonObject);
-                for (Map.Entry<String, Object> entry : jsonObject.entrySet()) {
-                    buildClaimMappings(claims, entry, CustomFederatedAuthenticatorConstants.MULTI_ATTRIBUTE_SEPARATOR);
+                String authenticatedUserId = getAuthenticateUser(jsonObject);
+                if (authenticatedUserId == null) {
+                    throw new AuthenticationFailedException("Cannot find the userId from the id_token sent " +
+                            "by the federated IDP.");
                 }
                 authenticatedUser = AuthenticatedUser
                         .createFederateAuthenticatedUserFromSubjectIdentifier(authenticatedUserId);
@@ -203,12 +200,20 @@ public class CustomFederatedAuthenticator extends AbstractApplicationAuthenticat
                 authenticatedUser = AuthenticatedUser.createFederateAuthenticatedUserFromSubjectIdentifier(
                         getAuthenticateUser(jsonObject));
             }
-
-            authenticatedUser.setUserAttributes(claims);
             context.setSubject(authenticatedUser);
-
         } catch (OAuthProblemException e) {
             throw new AuthenticationFailedException("Authentication process failed", e);
+        }
+    }
+
+    @Override
+    public String getContextIdentifier(HttpServletRequest request) {
+
+        String state = request.getParameter(CustomFederatedAuthenticatorConstants.OAUTH2_PARAM_STATE);
+        if (state != null) {
+            return state.split(",")[0];
+        } else {
+            return null;
         }
     }
 
@@ -233,43 +238,6 @@ public class CustomFederatedAuthenticator extends AbstractApplicationAuthenticat
             jwtAttributeMap.put(entry.getKey(), entry.getValue());
         }
         return jwtAttributeMap;
-    }
-
-    private String getAuthenticatedUserId(Map<String, Object> idTokenClaims) throws AuthenticationFailedException {
-
-        String authenticatedUserId = getAuthenticateUser(idTokenClaims);
-        if (authenticatedUserId == null) {
-            throw new AuthenticationFailedException("Cannot find the userId from the id_token sent " +
-                    "by the federated IDP.");
-        }
-        return authenticatedUserId;
-    }
-
-    protected void buildClaimMappings(Map<ClaimMapping, String> claims, Map.Entry<String, Object> entry,
-                                      String separator) {
-
-        StringBuilder claimValue = null;
-        if (StringUtils.isBlank(separator)) {
-            separator = IdentityCoreConstants.MULTI_ATTRIBUTE_SEPARATOR_DEFAULT;
-        }
-        if (entry.getValue() instanceof JSONArray) {
-            JSONArray jsonArray = (JSONArray) entry.getValue();
-            if (!jsonArray.isEmpty()) {
-                Iterator attributeIterator = jsonArray.iterator();
-                while (attributeIterator.hasNext()) {
-                    if (claimValue == null) {
-                        claimValue = new StringBuilder(attributeIterator.next().toString());
-                    } else {
-                        claimValue.append(separator).append(attributeIterator.next().toString());
-                    }
-                }
-            }
-        } else {
-            claimValue =
-                    entry.getValue() != null ? new StringBuilder(entry.getValue().toString()) : new StringBuilder();
-        }
-        claims.put(ClaimMapping.build(entry.getKey(), entry.getKey(), null, false),
-                claimValue != null ? claimValue.toString() : StringUtils.EMPTY);
     }
 
     protected OAuthClientRequest getAccessTokenRequest(AuthenticationContext context, OAuthAuthzResponse
@@ -308,17 +276,6 @@ public class CustomFederatedAuthenticator extends AbstractApplicationAuthenticat
             throw new AuthenticationFailedException("Exception while requesting access token");
         }
         return oAuthResponse;
-    }
-
-    @Override
-    public String getContextIdentifier(HttpServletRequest request) {
-
-        String state = request.getParameter(CustomFederatedAuthenticatorConstants.OAUTH2_PARAM_STATE);
-        if (state != null) {
-            return state.split(",")[0];
-        } else {
-            return null;
-        }
     }
 
     private String getLoginType(HttpServletRequest request) {
